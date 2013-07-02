@@ -1,27 +1,21 @@
 # This Python file uses the following encoding: utf-8
 from flask import Flask, render_template, g, redirect, url_for
-import MySQLdb
+from SqlServer import MSSQL
 import sys
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-def getDBCursor():
-    conn = MySQLdb.connect(host = "localhost",
-                           user = "root",
-                           passwd = "12345678",
-                           db = "config_manager")
-    cursor = conn.cursor()
-    cursor.execute('set names utf8;')
-    return cursor
+ms = MSSQL(host="localhost",user="sa",pwd="richeninfo",db="config_manager")
 
 app = Flask(__name__)
 
 @app.route('/index')
 def index():
-    cursor = getDBCursor()
-    cursor.execute("select id as value,project_name as text from rz_dc_project order by id")
-    rzDCProjects = cursor.fetchall()
+    rzDCProjects = ms.ExecQuery("select id as value,project_name as text from rz_dc_project order by id")
+    for item in rzDCProjects:
+        print item
+
     sqlForGatherIssues = '''
         select i.id, i.issue_project, i.issue_net_name
         from rz_dc_gather_issue i join rz_dc_project p
@@ -29,8 +23,8 @@ def index():
         where i.issue_status!='ok'
         order by issue_add_date desc
     '''
-    cursor.execute(sqlForGatherIssues)
-    gatherIssues = cursor.fetchall()
+
+    gatherIssues = ms.ExecQuery(sqlForGatherIssues)
     weekedAdd = []
     weekedAdd.append({
         'project_name' : u'永安',
